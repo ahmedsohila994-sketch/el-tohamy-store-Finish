@@ -1,0 +1,10 @@
+const SUPABASE_URL = "https://plssqjzeommocuxnbfuh.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBsc3Nxanplb21tb2N1eG5iZnVoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTEyOTQ2MzIsImV4cCI6MjEwNjg3MDYzMn0.NrqveqBrd7q3vI_AF7q7JgkkN6WqWEVUedkJfCpTM_A";
+const SB_HEADERS={"apikey":SUPABASE_ANON_KEY,"Authorization":"Bearer "+SUPABASE_ANON_KEY,"Content-Type":"application/json"};
+function sbUrl(path){return SUPABASE_URL+"/rest/v1/"+path}
+function dbToProduct(r){return {...r,id:r.id,desc:r.description||"",price:Number(r.price)||0,priceText:(Number(r.price)||0).toLocaleString("en-US")+" ج.م",material:r.material||"Stainless Steel",color:r.color||"Classic",movement:r.movement||"Quartz",water:r.water||"50M",category:r.category||"رجالي",badge:r.badge||"",featured:!!r.featured}}
+function productToDb(p){return {id:String(p.id),name:String(p.name||""),price:Number(p.price)||0,image:String(p.image||""),description:String(p.desc||""),material:String(p.material||"Stainless Steel"),color:String(p.color||"Classic"),movement:String(p.movement||"Quartz"),water:String(p.water||"50M"),category:String(p.category||"رجالي"),badge:String(p.badge||""),featured:!!p.featured}}
+async function sbList(){const r=await fetch(sbUrl("products?select=*&order=id.asc"),{headers:SB_HEADERS});if(!r.ok)throw new Error(await r.text());return (await r.json()).map(dbToProduct)}
+async function sbInsert(products){const rows=products.map(productToDb);const r=await fetch(sbUrl("products"),{method:"POST",headers:{...SB_HEADERS,"Prefer":"return=minimal"},body:JSON.stringify(rows)});if(!r.ok)throw new Error(await r.text())}
+async function sbUpsert(p){const r=await fetch(sbUrl("products?on_conflict=id"),{method:"POST",headers:{...SB_HEADERS,"Prefer":"resolution=merge-duplicates,return=minimal"},body:JSON.stringify(productToDb(p))});if(!r.ok)throw new Error(await r.text())}
+async function sbDelete(id){const r=await fetch(sbUrl("products?id=eq."+encodeURIComponent(id)),{method:"DELETE",headers:SB_HEADERS});if(!r.ok)throw new Error(await r.text())}
